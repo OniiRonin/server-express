@@ -7,8 +7,23 @@ const tareas = [
     { id: "345678", isCompleted: false, description: "Estudiar Material" }
 ];
 
+// Middleware para manejar errores en solicitudes POST y PUT
+const handleBadRequest = (req, res, next) => {
+    if (req.method === 'POST' && !req.body) {
+        res.status(400).send('Bad Request: Empty body in POST request');
+    } else if (req.method === 'POST' && (typeof req.body !== 'object' || !req.body.id || !req.body.isCompleted || !req.body.description)) {
+        res.status(400).send('Bad Request: Invalid or missing attributes in POST request');
+    } else if (req.method === 'PUT' && !req.body) {
+        res.status(400).send('Bad Request: Empty body in PUT request');
+    } else if (req.method === 'PUT' && (typeof req.body !== 'object' || !req.body.id || !req.body.isCompleted || !req.body.description)) {
+        res.status(400).send('Bad Request: Invalid or missing attributes in PUT request');
+    } else {
+        next();
+    }
+};
+
 // Ruta para crear una nueva tarea
-listEditRouter.post('/', (req, res) => {
+listEditRouter.post('/', handleBadRequest, (req, res) => {
     const tarea = req.body;
     tareas.push(tarea);
     res.send({
@@ -37,7 +52,7 @@ listEditRouter.delete('/:id', (req, res) => {
 });
 
 // Ruta para actualizar una tarea existente
-listEditRouter.put('/:id', (req, res) => {
+listEditRouter.put('/:id', handleBadRequest, (req, res) => {
     const tareaId = req.params.id;
     const updatedTarea = req.body;
     const tareaIndex = tareas.findIndex((tarea) => tarea.id === tareaId);
