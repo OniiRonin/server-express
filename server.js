@@ -1,14 +1,60 @@
-// Importamos el módulo de express
 const express = require('express');
-
-// Utilizamos express
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
 const app = express();
 
-// Configuración para parsear JSON en las solicitudes
 app.use(express.json());
+dotenv.config(); // Carga las variables de entorno desde el archivo .env
 
-// Definimos un puerto
 const port = 3000;
+
+// Array de usuarios predefinidos (por simplicidad, pero normalmente esto estaría en una base de datos)
+const users = [
+    { id: 1, username: 'usuario1', password: 'contrasena1' },
+    { id: 2, username: 'usuario2', password: 'contrasena2' },
+    // Añadir más usuarios aquí si es necesario
+];
+
+// Ruta para el proceso de autenticación
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    // Buscar el usuario en el array
+    const user = users.find(u => u.username === username && u.password === password);
+
+    if (!user) {
+        return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
+    }
+
+    // Crear el token JWT
+    const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ success: true, token });
+});
+
+// Middleware para proteger rutas
+const protectRoute = (req, res, next) => {
+    const token = req.headers.authorization;
+
+    if (!token) {
+        return res.status(401).json({ success: false, message: 'Token no proporcionado' });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ success: false, message: 'Token inválido' });
+        }
+
+        // El token es válido, podemos continuar
+        req.user = decoded;
+        next();
+    });
+};
+
+// Ruta protegida
+app.get('/protected', protectRoute, (req, res) => {
+    res.json({ success: true, message: 'Ruta protegida', user: req.user });
+});
 
 //estructura JSON
 const tareas = [
@@ -85,4 +131,4 @@ app.use('/list-edit', listEditRouter);
 // Encender el servidor
 app.listen(port, () => {
     console.log('Servidor iniciado en el puerto ' + port);
-}); 
+});
