@@ -63,70 +63,68 @@ const tareas = [
     { id: "345678", isCompleted: false, description: "Estudiar Material" }
 ];
 
-// Ruta para obtener la lista de tareas
+// Ruta para obtener la lista de todas las tareas
 app.get('/tareas', (req, res) => {
-    res.send({
-        success: true,
-        content: tareas
-    });
+    res.json({ success: true, content: tareas });
+});
+
+// Ruta para obtener una sola tarea por su ID
+app.get('/tareas/:id', (req, res) => {
+    const tareaId = req.params.id;
+    const tarea = tareas.find(t => t.id === tareaId);
+
+    if (tarea) {
+        res.json({ success: true, content: tarea });
+    } else {
+        res.status(404).json({ success: false, message: 'Tarea no encontrada' });
+    }
 });
 
 // Ruta para agregar una nueva tarea
 app.post('/tareas', (req, res) => {
     const tarea = req.body;
     tareas.push(tarea);
-    res.send({
-        success: true,
-        content: tareas
-    });
+    res.status(201).json({ success: true, content: tarea });
 });
 
-// Ruta para editar una tarea existente
+// Ruta para actualizar una tarea existente
 app.put('/tareas/:id', (req, res) => {
     const tareaId = req.params.id;
     const updatedTarea = req.body;
-    const tareaIndex = tareas.findIndex((tarea) => tarea.id === tareaId);
+    const tareaIndex = tareas.findIndex(t => t.id === tareaId);
 
     if (tareaIndex !== -1) {
         tareas[tareaIndex] = updatedTarea;
-        res.send({
-            success: true,
-            content: tareas
-        });
+        res.json({ success: true, content: updatedTarea });
     } else {
-        res.status(404).send({
-            success: false,
-            message: 'Tarea no encontrada'
-        });
+        res.status(404).json({ success: false, message: 'Tarea no encontrada' });
     }
 });
 
 // Ruta para eliminar una tarea existente
 app.delete('/tareas/:id', (req, res) => {
     const tareaId = req.params.id;
-    const tareaIndex = tareas.findIndex((tarea) => tarea.id === tareaId);
+    const tareaIndex = tareas.findIndex(t => t.id === tareaId);
 
     if (tareaIndex !== -1) {
-        tareas.splice(tareaIndex, 1);
-        res.send({
-            success: true,
-            content: tareas
-        });
+        const deletedTarea = tareas.splice(tareaIndex, 1);
+        res.json({ success: true, content: deletedTarea });
     } else {
-        res.status(404).send({
-            success: false,
-            message: 'Tarea no encontrada'
-        });
+        res.status(404).json({ success: false, message: 'Tarea no encontrada' });
     }
 });
 
-// Importar los enrutadores
-const listViewRouter = require('./list-view-router');
-const listEditRouter = require('./list-edit-router');
+// Ruta para obtener la lista de tareas completas
+app.get('/tareas/completas', (req, res) => {
+    const completas = tareas.filter(t => t.isCompleted);
+    res.json({ success: true, content: completas });
+});
 
-// Usar los enrutadores
-app.use('/list-view', listViewRouter);
-app.use('/list-edit', listEditRouter);
+// Ruta para obtener la lista de tareas incompletas
+app.get('/tareas/incompletas', (req, res) => {
+    const incompletas = tareas.filter(t => !t.isCompleted);
+    res.json({ success: true, content: incompletas });
+});
 
 // Encender el servidor
 app.listen(port, () => {
